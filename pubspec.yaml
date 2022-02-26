@@ -47,6 +47,15 @@ dev_dependencies:
   flutter_lints: ^1.0.0
   hexcolor: ^2.0.6
   font_awesome_flutter: ^9.1.0
+  dropdown_button2: ^1.1.1
+  intl: ^0.17.0
+  cupertino_date_textbox: ^1.0.1
+  flutter_icons: 1.1.0
+  cupertino_icons: 1.0.4
+  drawer_swipe: 0.0.4
+
+
+
 
 
 # For information on the generic Dart part of this file, see the
