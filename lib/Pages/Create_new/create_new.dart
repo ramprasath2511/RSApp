@@ -81,7 +81,7 @@ class _CreatBudgetPageState extends State<CreatBudgetPage> {
                         IconButton(onPressed: (){
                           Navigator.pop(context);
                         }, icon: Icon(Icons.arrow_back),),
-                        Text(
+                        const Text(
                           "Create budget",
                           style: TextStyle(
                               fontSize: 20,

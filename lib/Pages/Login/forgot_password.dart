@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:rsapp/Api/api_manager.dart';
 import 'package:rsapp/Common/theme_helper.dart';
 import 'header_design.dart';
 import 'login_page.dart';
@@ -14,11 +15,18 @@ class ForgotPasswordPage extends StatefulWidget {
 
 class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   final _formKey = GlobalKey<FormState>();
-
+  bool isLoading = false;
+  late String email, password;
+  TextEditingController _emailController = new TextEditingController();
+  TextEditingController _passwordController = new TextEditingController();
+  GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey();
+  late ScaffoldMessengerState scaffoldMessenger;
   @override
   Widget build(BuildContext context) {
+    scaffoldMessenger = ScaffoldMessenger.of(context);
     double _headerHeight = 300;
     return Scaffold(
+      key:_scaffoldKey,
         backgroundColor: Colors.white,
         body: SingleChildScrollView(
           child: Column(
@@ -77,14 +85,28 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                                   }
                                   return null;
                                 },
+                                controller: _emailController,
+                                onSaved: (val) {
+                                  email = val!;
+                                },
                               ),
                               decoration: ThemeHelper().inputBoxDecorationShaddow(),
                             ),
                             SizedBox(height: 10.0),
                             Container(
-                              child: TextField(
+                              child: TextFormField(
                                 obscureText: true,
                                 decoration: ThemeHelper().textInputDecoration('Password', 'Enter your password'),
+                                validator:(val){
+                                  if(val!.isEmpty){
+                                    return "Password can't be empty";
+                                  }
+                                  return null;
+                                },
+                                controller: _passwordController,
+                                onSaved: (val) {
+                                  password = val!;
+                                },
                               ),
                               decoration: ThemeHelper().inputBoxDecorationShaddow(),
                             ),
@@ -106,6 +128,17 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                                   ),
                                 ),
                                 onPressed: () {
+    if (_formKey.currentState!.validate()) {
+      Future<String> response = ApiManager().forgotPassword(
+           _passwordController.text, _emailController.text);
+      response.then((value) =>
+      {
+
+        scaffoldMessenger.showSnackBar(
+            SnackBar(content: Text(value))),
+      });
+
+    };
 
                                 },
                               ),

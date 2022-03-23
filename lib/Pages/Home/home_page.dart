@@ -1,8 +1,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:hexcolor/hexcolor.dart';
+import 'package:rsapp/Api/api_list.dart';
 import 'package:rsapp/Common/theme_helper.dart';
 import 'package:drawer_swipe/drawer_swipe.dart';
+import 'package:rsapp/Model/usermodel.dart';
 
 import 'navigationbar.dart';
 
@@ -12,11 +14,16 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  late Future<User?> userdetails;
   Color _primaryColor = HexColor('#DC54FE');
   Color _accentColor = HexColor('#8A02AE');
   int currentIndex = 1;
   var drawerKey = GlobalKey<SwipeDrawerState>();
-
+  @override
+  void initState() {
+      super.initState();
+      userdetails = ApiList().getUserDetails();
+  }
   @override
   setBottomBarIndex(index) {
     setState(() {
@@ -26,38 +33,91 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final Size size = MediaQuery.of(context).size;
-    return Scaffold(
+    return Container(
+      decoration: const BoxDecoration(
+          gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Colors.deepPurple, Colors.purple])),
+      child: Scaffold(
 
-backgroundColor: Colors.grey.shade300,
-      body: SwipeDrawer(
-    radius: 20,
-    key: drawerKey,
-    hasClone: false,
-    bodyBackgroundPeekSize: 30,
-    backgroundColor: _primaryColor,
-    // pass drawer widget
-    drawer: buildDrawer(),
-    child:getBody(),
+backgroundColor: Colors.transparent,
+        body: SwipeDrawer(
+      radius: 20,
+      key: drawerKey,
+      hasClone: false,
+      bodyBackgroundPeekSize: 30,
+      backgroundColor: Colors.transparent,
+      // pass drawer widget
+      drawer: buildDrawer(),
+      child:getBody(),
+        ),
+
       ),
-
     );
   }
   Widget buildDrawer() {
-    return Container(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ListTile(
-            title: Text('Title'),
+    var size = MediaQuery.of(context).size;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(40, 60, 20, 20),
+      child: Container(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+          Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: (size.width - 40) * 0.25,
+              child: Container(
+                width: 150,
+                height: 150,
+                decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    image: DecorationImage(
+                        image: NetworkImage(
+                            "https://images.unsplash.com/photo-1531256456869-ce942a665e80?ixid=MXwxMjA3fDB8MHxzZWFyY2h8MTI4fHxwcm9maWxlfGVufDB8fDB8&ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60"),
+                        fit: BoxFit.cover)),
+              ),
+            ),
+            SizedBox(
+              height: 5,
+            ),
+            Text("Mr.Ramprasath",style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w500,
+                color: Colors.white54
+            ),
+            ),
+            ]
           ),
-          ListTile(
-            title: Text('Title'),
-          ),
-          ListTile(
-            title: Text('Title'),
-          ),
-        ],
+
+            ListTile(
+              title: Text("History",style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white54
+              ),),
+              onTap: (){},
+            ),
+            ListTile(
+              title: Text('Home',style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white54
+              ),),
+              onTap: (){},),
+
+            ListTile(
+              title: Text('Logout', style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.deepOrangeAccent
+              ),),),
+          ],
+        ),
       ),
     );
   }
@@ -118,48 +178,61 @@ backgroundColor: Colors.grey.shade300,
                     child: Column(
 
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Container(
-                              width: (size.width - 40) * 0.25,
-                              child: Container(
-                                        width: 65,
-                                        height: 65,
-                                        decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            image: DecorationImage(
-                                                image: NetworkImage(
-                                                    "https://images.unsplash.com/photo-1531256456869-ce942a665e80?ixid=MXwxMjA3fDB8MHxzZWFyY2h8MTI4fHxwcm9maWxlfGVufDB8fDB8&ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60"),
-                                                fit: BoxFit.cover)),
+                        FutureBuilder<User?>(
+                          future:userdetails,
+                        builder:(context,snapshot) {
+                          if (snapshot.hasData) {
+                            return Row(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                Container(
+                                  width: (size.width - 40) * 0.25,
+                                  child: Container(
+                                    width: 65,
+                                    height: 65,
+                                    decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        image: DecorationImage(
+                                            image: NetworkImage(
+                                                snapshot.data!.profilePic.toString()),
+                                            fit: BoxFit.cover)),
+                                  ),
+                                ),
+                                Container(
+                                  width: (size.width - 40) * 0.6,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment
+                                        .start,
+                                    children: [
+                                      Text(
+                                        "Hello!",
+                                        style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w700,
+                                            color: Colors.black.withOpacity(
+                                                0.6)),
                                       ),
-                            ),
-                            Container(
-                              width: (size.width - 40) * 0.6,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "Hello!",
-                                    style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w700,
-                                        color: Colors.black.withOpacity(0.6)),
+                                      SizedBox(
+                                        height: 5,
+                                      ),
+                                      Text(
+                                        snapshot.data!.username,
+                                        style: TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.w500,
+                                            color: Colors.black),
+                                      ),
+                                    ],
                                   ),
-                                  SizedBox(
-                                    height: 5,
-                                  ),
-                                  Text(
-                                    "Mr.Ramprasath",
-                                    style: TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.w500,
-                                        color: Colors.black),
-                                  ),
-                                ],
-                              ),
-                            )
-                          ],
+                                )
+                              ],
+                            );
+                          }
+                          else if (snapshot.hasError) {
+                            return Text('${snapshot.error}');
+                          }
+                          return const CircularProgressIndicator();
+                        }
                         ),
                         SizedBox(
                           height: 10,
@@ -174,7 +247,7 @@ backgroundColor: Colors.grey.shade300,
                             padding: const EdgeInsets.only(
                                 left: 20, right: 20, top: 25, bottom: 25),
                             child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 Column(

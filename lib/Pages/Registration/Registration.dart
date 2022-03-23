@@ -2,9 +2,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:hexcolor/hexcolor.dart';
 import 'package:rsapp/Common/theme_helper.dart';
+import 'package:rsapp/Api/api_manager.dart';
+import 'package:rsapp/Model/usermodel.dart';
 import 'package:rsapp/Pages/Home/home_page.dart';
 import 'package:rsapp/Pages/Login/login_page.dart';
 import 'package:rsapp/Pages/Registration/registration_header.dart';
@@ -20,14 +20,23 @@ class RegistrationPage extends  StatefulWidget{
 }
 
 class _RegistrationPageState extends State<RegistrationPage>{
-
   final _formKey = GlobalKey<FormState>();
-  bool checkedValue = false;
+
+  bool isLoading =false;
   bool checkboxValue = false;
+  late String username,email,password;
+  GlobalKey<ScaffoldState>_scaffoldKey=GlobalKey();
+  late ScaffoldMessengerState scaffoldMessenger;
+
+  TextEditingController _usernameController=new TextEditingController();
+  TextEditingController _emailController=new TextEditingController();
+  TextEditingController _passwordController=new TextEditingController();
 
   @override
   Widget build(BuildContext context) {
+    scaffoldMessenger = ScaffoldMessenger.of(context);
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: Colors.white,
       body: SingleChildScrollView(
         child: Stack(
@@ -85,6 +94,11 @@ class _RegistrationPageState extends State<RegistrationPage>{
                         Container(
                           child: TextFormField(
                             decoration: ThemeHelper().textInputDecoration('User Name', 'Enter your User name'),
+                            validator: (val)=>(val!.isEmpty ?'Please enter your Name':null),
+                            controller: _usernameController,
+                            onSaved: (val) {
+                              username = val!;
+                            },
                           ),
                           decoration: ThemeHelper().inputBoxDecorationShaddow(),
                         ),
@@ -98,6 +112,10 @@ class _RegistrationPageState extends State<RegistrationPage>{
                                 return "Enter a valid email address";
                               }
                               return null;
+                            },
+                            controller: _emailController,
+                            onSaved: (val) {
+                              email = val!;
                             },
                           ),
                           decoration: ThemeHelper().inputBoxDecorationShaddow(),
@@ -114,6 +132,10 @@ class _RegistrationPageState extends State<RegistrationPage>{
                                 return "Please enter your password";
                               }
                               return null;
+                            },
+                            controller: _passwordController,
+                            onSaved: (val) {
+                              password = val!;
                             },
                           ),
                           decoration: ThemeHelper().inputBoxDecorationShaddow(),
@@ -172,14 +194,43 @@ class _RegistrationPageState extends State<RegistrationPage>{
                               ),
                             ),
                             onPressed: () {
-                              if (_formKey.currentState!.validate()) {
-                                Navigator.of(context).pushAndRemoveUntil(
-                                    MaterialPageRoute(
-                                        builder: (context) => HomePage()
-                                    ),
-                                        (Route<dynamic> route) => false
-                                );
+                              if(isLoading){
+                                return;
                               }
+                                if(_formKey.currentState!.validate()){
+                                  Future<Map<String, dynamic>> response =
+                                  ApiManager().postRegister(_usernameController.text,_emailController.text,_passwordController.text,"null");
+                                  response.then((value) =>
+                                  {
+                                    value.forEach((key, value) {
+                                      scaffoldMessenger.showSnackBar(
+                                          SnackBar(content: Text(key)));
+                                      if (value == 1) {
+                                        Navigator.pushReplacement(
+                                            context,
+                                            MaterialPageRoute(
+                                                builder: (context) =>
+                                                    HomePage()));
+                                      }
+                                    })
+                                  });
+                                }
+                               /* if(_usernameController.text.isEmpty)
+                                {
+                                  scaffoldMessenger.showSnackBar(SnackBar(content:Text("Please Enter Name")));
+                                  return;
+                                }
+                                if(_emailController.text.isEmpty)
+                                {
+                                  scaffoldMessenger.showSnackBar(SnackBar(content:Text("Please Enter Email")));
+                                  return;
+                                }
+                                if(_passwordController.text.isEmpty||_passwordController.text.length<6)
+                                {
+                                  scaffoldMessenger.showSnackBar(SnackBar(content:Text("Password should be min 6 characters")));
+                                  return;
+                                }*/
+
                             },
                           ),
                         ),
