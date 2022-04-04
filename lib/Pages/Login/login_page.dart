@@ -28,6 +28,12 @@ class _LoginPageState extends State<LoginPage> {
   TextEditingController _passwordController = new TextEditingController();
   GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey();
   late ScaffoldMessengerState scaffoldMessenger;
+@override
+void dispose(){
+  _emailController.dispose();
+  _passwordController.dispose();
+  super.dispose();
+}
 
   @override
   Widget build(BuildContext context) {
@@ -66,6 +72,7 @@ class _LoginPageState extends State<LoginPage> {
                             children: [
                               Container(
                                 child: TextFormField(
+                          key: ValueKey("login_email"),
                                   decoration: ThemeHelper().textInputDecoration(
                                       'User Name', 'Enter your user name'),
                                   validator: (val) =>
@@ -83,6 +90,7 @@ class _LoginPageState extends State<LoginPage> {
                               SizedBox(height: 30.0),
                               Container(
                                 child: TextFormField(
+                                  key: ValueKey("password"),
                                   obscureText: true,
                                   decoration: ThemeHelper().textInputDecoration(
                                       'Password', 'Enter your password'),
@@ -138,6 +146,7 @@ class _LoginPageState extends State<LoginPage> {
                                     ),
                                   ),
                                   onPressed: () {
+
                                     if (isLoading) {
                                       return;
                                     }
@@ -153,6 +162,7 @@ class _LoginPageState extends State<LoginPage> {
                                           scaffoldMessenger.showSnackBar(
                                               SnackBar(content: Text(key)));
                                           if (value == 1) {
+                                            key: ValueKey("submit");
                                             Navigator.pushReplacement(
                                                 context,
                                                 MaterialPageRoute(

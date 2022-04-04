@@ -2,8 +2,13 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_icons/flutter_icons.dart';
 import 'package:hexcolor/hexcolor.dart';
+import 'package:intl/intl.dart';
+import 'package:rsapp/Api/api_list.dart';
 import 'package:rsapp/Common/days_month.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
+
+import '../../Model/budget.dart';
+import '../Home/home_page.dart';
 
 class HistoryPage extends StatefulWidget {
   @override
@@ -11,7 +16,10 @@ class HistoryPage extends StatefulWidget {
 }
 
 class _HistoryPageState extends State<HistoryPage> {
-  String? selectedValue;
+
+  String? selectedValue = DateFormat.y().format(DateTime.now());
+  Future<List<Budget>>? response;
+  Future<double>? monthlyBudget;
   List<String> items = [
     '2020',
     '2021',
@@ -21,9 +29,15 @@ class _HistoryPageState extends State<HistoryPage> {
     '2025',
 
   ];
-  int activeDay = 0;
+  String activeDay = DateFormat.MMMM().format(DateTime.now());
   Color _primaryColor = HexColor('#DC54FE');
   Color _accentColor = HexColor('#8A02AE');
+  @override
+  void initState()  {
+    super.initState();
+    monthlyBudget = ApiList().monthlyTotal(activeDay.toString(), selectedValue!);
+    response = ApiList().filterList(activeDay.toString(), selectedValue!);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,8 +49,8 @@ class _HistoryPageState extends State<HistoryPage> {
 
   Widget getBody() {
     var size = MediaQuery.of(context).size;
-    return SingleChildScrollView(
-      child: Column(
+    return Scaffold(
+      body: Column(
         children: [
           Container(
             decoration: BoxDecoration(color: Colors.white, boxShadow: [
@@ -55,10 +69,11 @@ class _HistoryPageState extends State<HistoryPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Icon(AntDesign.arrowleft),
-                      SizedBox(
-                        width: 25,
-                      ),
+                      IconButton(onPressed: (){
+                        Navigator.push(context,
+                            MaterialPageRoute(builder: (context) =>HomePage()));
+                      }, icon: Icon(AntDesign.arrowleft)),
+
                       Text(
                         "History",
                         style: TextStyle(
@@ -143,20 +158,21 @@ class _HistoryPageState extends State<HistoryPage> {
                           return GestureDetector(
                             onTap: () {
                               setState(() {
-                                activeDay = index;
+                                activeDay = days[index]['day'];
                               });
+                               response = ApiList().filterList(activeDay.toString(), selectedValue!);
+                              monthlyBudget = ApiList().monthlyTotal(activeDay.toString(),selectedValue!);
                             },
                             child:  Container(
                               width: 50,
                               height: 40,
-
                               decoration: BoxDecoration(
-                                  color: activeDay == index
+                                  color: activeDay == days[index]['day']
                                       ? _primaryColor
                                       : Colors.transparent,
                                   shape: BoxShape.circle,
                                   border: Border.all(
-                                      color: activeDay == index
+                                      color: activeDay == days[index]['day']
                                           ? _primaryColor
                                           : Colors.black.withOpacity(0.1))),
                               child: Center(
@@ -165,53 +181,12 @@ class _HistoryPageState extends State<HistoryPage> {
                                   style: TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.w600,
-                                      color: activeDay == index
+                                      color: activeDay == days[index]['day']
                                           ? Colors.white
                                           : Colors.black),
                                 ),
                               ),
                             )
-                           /* Column(
-                              children: [
-                                *//* Text(
-                                    days[index]['label'],
-                                    style: TextStyle(fontSize: 10),
-                                  ),
-                                  SizedBox(
-                                    height: 10,
-                                  ),*//*
-                                Container(
-                                  width: 50,
-                                  height: 40,
-
-                                  decoration: BoxDecoration(
-                                      color: activeDay == index
-                                          ? _primaryColor
-                                          : Colors.transparent,
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                          color: activeDay == index
-                                              ? _primaryColor
-                                              : Colors.black.withOpacity(0.1))),
-                                  child: Center(
-                                    child: Text(
-                                      days[index]['day'],
-                                      style: TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w600,
-                                          color: activeDay == index
-                                              ? Colors.white
-                                              : Colors.black),
-                                    ),
-                                  ),
-                                )
-                              ],
-                            ),*/
-                           /* Column(
-                             // width: (MediaQuery.of(context).size.width - 30) / 7,
-                              children:[
-
-                            ]),*/
                           );
                         })),
                   )
@@ -220,105 +195,133 @@ class _HistoryPageState extends State<HistoryPage> {
             ),
           ),
           SizedBox(
-            height: 30,
+            height: 5,
           ),
-          Padding(
+
+          Expanded(
+          child:Padding(
             padding: const EdgeInsets.only(left: 20, right: 20),
-            child: Column(
-                children: List.generate(5, (index) {
-              return Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Container(
-                        width: (size.width - 40) * 0.7,
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 50,
-                              height: 50,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.grey.withOpacity(0.1),
-                              ),
-                              child: Center(
-                                child: Image.asset(
-                                  'images/splash_image.jpeg',
-                                  width: 30,
-                                  height: 30,
-                                ),
-                              ),
-                            ),
-                            SizedBox(width: 15),
-                            Container(
-                              width: (size.width - 90) * 0.5,
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.start,
+            child: FutureBuilder<List<Budget>>(
+             future: response,
+            builder: (context,AsyncSnapshot<List<Budget>> snapshot) {
+              if (snapshot.hasData!=null) {
+           return ListView.builder(
+                      itemCount: snapshot.data!.length,
+                      itemBuilder: (BuildContext context, int index) {
+                        return Container(
+                          child: Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment
+                                    .spaceBetween,
                                 children: [
-                                  Text(
-                                    'Bread, OIL ',
-                                    style: TextStyle(
-                                        fontSize: 15,
-                                        color: Colors.black,
-                                        fontWeight: FontWeight.w500),
-                                    overflow: TextOverflow.ellipsis,
+                                  Container(
+                                    width: (size.width - 40) * 0.7,
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          width: 50,
+                                          height: 50,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: Colors.grey.withOpacity(0.1),
+                                          ),
+                                          child: Center(
+                                            child: Image.asset(
+                                              'images/splash_image.jpeg',
+                                              width: 30,
+                                              height: 30,
+                                            ),
+                                          ),
+                                        ),
+                                        SizedBox(width: 15),
+                                        Container(
+                                          width: (size.width - 90) * 0.5,
+                                          child: Column(
+                                            mainAxisAlignment: MainAxisAlignment
+                                                .center,
+                                            crossAxisAlignment: CrossAxisAlignment
+                                                .start,
+                                            children: [
+                                              Text(
+                                                snapshot.data![index].description,
+                                                style: TextStyle(
+                                                    fontSize: 15,
+                                                    color: Colors.black,
+                                                    fontWeight: FontWeight
+                                                        .w500),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              SizedBox(height: 5),
+                                              Text(
+                                                snapshot.data![index].date,
+                                                style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: Colors.black
+                                                        .withOpacity(
+                                                        0.5),
+                                                    fontWeight: FontWeight
+                                                        .w400),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              SizedBox(height: 5),
+                                              Text(
+                                                snapshot.data![index].owner,
+                                                style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: Colors.black
+                                                        .withOpacity(
+                                                        0.5),
+                                                    fontWeight: FontWeight
+                                                        .w400),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ],
+                                          ),
+                                        )
+                                      ],
+                                    ),
                                   ),
-                                  SizedBox(height: 5),
-                                  Text(
-                                    '13/02/2022',
-                                    style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.black.withOpacity(0.5),
-                                        fontWeight: FontWeight.w400),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  SizedBox(height: 5),
-                                  Text(
-                                    'Ramprasath',
-                                    style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.black.withOpacity(0.5),
-                                        fontWeight: FontWeight.w400),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
+                                  Container(
+                                    width: (size.width - 40) * 0.3,
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        Text(
+                                          '£'+snapshot.data![index].amount.toString(),
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 15,
+                                              color: Colors.green),
+                                        ),
+                                      ],
+                                    ),
+                                  )
                                 ],
                               ),
-                            )
-                          ],
-                        ),
-                      ),
-                      Container(
-                        width: (size.width - 40) * 0.3,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            Text(
-                              '£230',
-                              style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 15,
-                                  color: Colors.green),
-                            ),
-                          ],
-                        ),
-                      )
-                    ],
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 65, top: 8),
-                    child: Divider(
-                      thickness: 0.8,
-                    ),
-                  )
-                ],
-              );
-            })),
+                              Padding(
+                                padding: const EdgeInsets.only(
+                                    left: 65, top: 8),
+                                child: Divider(
+                                  thickness: 0.8,
+                                ),
+                              )
+                            ],
+                          ),
+                        );
+                      }
+                  );
+    }else{
+                return const Center(
+                  child: Text(" No budget data"),
+                );
+              }},),
+    ),
           ),
           SizedBox(
             height: 15,
           ),
+
           Padding(
             padding: const EdgeInsets.only(left: 20, right: 20),
             child: Row(
@@ -336,20 +339,34 @@ class _HistoryPageState extends State<HistoryPage> {
                   ),
                 ),
                 Spacer(),
-                Padding(
+                FutureBuilder<double>(
+    future: monthlyBudget,
+    builder:(context,snapshot) {
+    if (snapshot.hasData) {
+    return Padding(
                   padding: const EdgeInsets.only(top: 5),
                   child: Text(
-                    "\$1780.00",
+                    "£"+snapshot.data.toString(),
                     style: TextStyle(
                         fontSize: 20,
                         color: Colors.black,
                         fontWeight: FontWeight.bold),
                     overflow: TextOverflow.ellipsis,
                   ),
+                );
+      }
+      else if (snapshot.hasError) {
+      return Text('${snapshot.error}');
+      }
+      return const CircularProgressIndicator();
+    }
                 ),
               ],
             ),
-          )
+          ),
+          SizedBox(
+            height: 25,
+          ),
         ],
       ),
     );

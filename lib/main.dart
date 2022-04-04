@@ -7,7 +7,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'Pages/Login/login_page.dart';
 
-void main() {
+
+void main() async{
   runApp( RsApp());
 }
 

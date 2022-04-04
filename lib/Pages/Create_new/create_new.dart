@@ -4,7 +4,9 @@ import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:cupertino_date_textbox/cupertino_date_textbox.dart';
 import 'package:intl/intl.dart';
+import 'package:rsapp/Api/api_list.dart';
 import 'package:rsapp/Common/theme_helper.dart';
+import 'package:rsapp/Pages/Home/home_page.dart';
 
 class CreatBudgetPage extends StatefulWidget {
   @override
@@ -17,15 +19,19 @@ class _CreatBudgetPageState extends State<CreatBudgetPage> {
     'Ramprasath',
     'Sudha',
   ];
-
-  String? selectedValue;
-
+  final _formKey = GlobalKey<FormState>();
+   String? selectedValue;
+late String description;
+late double amount;
+late String month;
   Color _primaryColor = HexColor('#DC54FE');
   Color _accentColor = HexColor('#8A02AE');
   int activeCategory = 0;
-  TextEditingController _budgetName =
-  TextEditingController(text: "Oil, Bread");
-  TextEditingController _budgetPrice = TextEditingController(text: "\£46.00");
+  TextEditingController _description = TextEditingController();
+  TextEditingController _month = TextEditingController();
+  TextEditingController _budgetPrice = TextEditingController();
+  GlobalKey<ScaffoldState>_scaffoldKey=GlobalKey();
+  late ScaffoldMessengerState scaffoldMessenger;
   @override
   Widget build(BuildContext context) {
   final String formattedDate = DateFormat.yMd().format(_selectedDateTime);
@@ -35,7 +41,7 @@ class _CreatBudgetPageState extends State<CreatBudgetPage> {
   final birthdayTile = new Material(
     color: Colors.transparent,
     child: Padding(
-      padding: const EdgeInsets.only(left: 20, right: 20),
+      padding: const EdgeInsets.only(left: 20, right: 20, bottom: 5),
       child: new Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -44,9 +50,6 @@ class _CreatBudgetPageState extends State<CreatBudgetPage> {
                 color: Color(0xff67727d),
                 fontSize: 15.0,
               )),
-          const Padding(
-            padding: EdgeInsets.only(bottom: 5.0),
-          ),
           CupertinoDateTextBox(
               initialValue: _selectedDateTime,
               onDateChange: onBirthdayChange,
@@ -56,9 +59,12 @@ class _CreatBudgetPageState extends State<CreatBudgetPage> {
     ),
   );
     return Scaffold(
+      key: _scaffoldKey,
      // backgroundColor: Colors.grey.withOpacity(0.05),
       body: SingleChildScrollView(
-        child: Column(
+        child: Form(
+          key:_formKey,
+          child:Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Container(
@@ -79,7 +85,8 @@ class _CreatBudgetPageState extends State<CreatBudgetPage> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         IconButton(onPressed: (){
-                          Navigator.pop(context);
+                          Navigator.push(context,
+                              MaterialPageRoute(builder: (context) =>HomePage()));
                         }, icon: Icon(Icons.arrow_back),),
                         const Text(
                           "Create budget",
@@ -117,9 +124,18 @@ class _CreatBudgetPageState extends State<CreatBudgetPage> {
                         fontSize: 13,
                         color: Color(0xff67727d)),
                   ),
-                  TextField(
-                    controller: _budgetName,
+                  TextFormField(
+                    controller: _description,
                     cursorColor: Colors.black,
+                    validator: (val) {
+                      if(val!.isEmpty) {
+                        return "Enter a description";
+                      }
+                      return null;
+                    },
+                    onSaved: (val) {
+                      description = val!;
+                    },
                     style: TextStyle(
                         fontSize: 17, fontWeight: FontWeight.bold, color: Colors.black),
                     decoration: InputDecoration(
@@ -147,9 +163,19 @@ class _CreatBudgetPageState extends State<CreatBudgetPage> {
                                   fontSize: 13,
                                   color: Color(0xff67727d)),
                             ),
-                            TextField(
+                            TextFormField(
                               controller: _budgetPrice,
+                              keyboardType: TextInputType.number,
                               cursorColor: Colors.black,
+                              validator: (val) {
+                                if(val!.isEmpty) {
+                                  return "Enter a price";
+                                }
+                                return null;
+                              },
+                              onSaved: (val) {
+                                amount = val! as double;
+                              },
                               style: TextStyle(
                                   fontSize: 17,
                                   fontWeight: FontWeight.bold,
@@ -170,7 +196,39 @@ class _CreatBudgetPageState extends State<CreatBudgetPage> {
                   SizedBox(
                     height: 20,
                   ),
+                  Text(
+                    "Purchased Month",
+                    style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 13,
+                        color: Color(0xff67727d)),
+                  ),
+                  TextFormField(
+                    controller: _month,
+                    cursorColor: Colors.black,
+                    validator: (val) {
+                      if(val!.isEmpty) {
+                        return "Enter a current month";
+                      }
+                      return null;
+                    },
+                    onSaved: (val) {
+                      month = val!;
+                    },
+                    style: TextStyle(
+                        fontSize: 17, fontWeight: FontWeight.bold, color: Colors.black),
+                    decoration: InputDecoration(
+                        hintText: "Enter current month eg.June", border: InputBorder.none),
+                  ),
+                  Divider(
+                    thickness: 1,
+                    color: Colors.grey,
+                  ),
+                  SizedBox(
+                    height: 20,
+                  ),
                   DropdownButtonFormField2(
+                    value: selectedValue,
                     decoration: InputDecoration(
                       fillColor: Colors.grey,
                       //Add isDense true and zero Padding.
@@ -200,9 +258,7 @@ class _CreatBudgetPageState extends State<CreatBudgetPage> {
                       borderRadius: BorderRadius.circular(15),
                       color: Colors.purple[700],
                     ),
-                    items: genderItems
-                        .map((item) =>
-                        DropdownMenuItem<String>(
+                    items: genderItems.map((item) => DropdownMenuItem<String>(
                           value: item,
                           child: Text(
                             item,
@@ -220,7 +276,9 @@ class _CreatBudgetPageState extends State<CreatBudgetPage> {
                       }
                     },
                     onChanged: (value) {
-                      //Do something when changing the item if you want.
+                      setState(() {
+                        selectedValue = value.toString();
+                      });
                     },
                     onSaved: (value) {
                       selectedValue = value.toString();
@@ -230,7 +288,7 @@ class _CreatBudgetPageState extends State<CreatBudgetPage> {
                     height: 40,
                   ),
                   Padding(
-                    padding: const EdgeInsets.only(left: 70, right: 60),
+                    padding: const EdgeInsets.only(left: 90, right: 60),
                     child: Container(
                       decoration: ThemeHelper().buttonBoxDecoration(context),
                       child: ElevatedButton(
@@ -240,6 +298,22 @@ class _CreatBudgetPageState extends State<CreatBudgetPage> {
                           child: Text('Save'.toUpperCase(), style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),),
                         ),
                         onPressed: (){
+                          if(_formKey.currentState!.validate()){
+                          Future<Map<String, dynamic>> response =
+                          ApiList().addBudget( double.parse(_budgetPrice.text),_description.text,selectedValue!,formattedDate,_month.text);
+                          response.then((value) =>
+                          {
+                            value.forEach((key, value) {
+                              if (value == 1) {
+                                scaffoldMessenger.showSnackBar(
+                                    SnackBar(content: Text(key)));
+                              }else{
+                                scaffoldMessenger.showSnackBar(
+                                    SnackBar(content: Text("Data is not uploaded")));
+                              }
+                            })
+                          });
+                        }
                          // Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => ()));
                         },
                       ),
@@ -249,7 +323,7 @@ class _CreatBudgetPageState extends State<CreatBudgetPage> {
               ),
             )
           ],
-        ),
+        ),),
       ),//birthdayTile,//getBody(),
     );
   }

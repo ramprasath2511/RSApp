@@ -1,15 +1,19 @@
 
+import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:rsapp/Common/theme_helper.dart';
 import 'package:rsapp/Api/api_manager.dart';
-import 'package:rsapp/Model/usermodel.dart';
 import 'package:rsapp/Pages/Home/home_page.dart';
 import 'package:rsapp/Pages/Login/login_page.dart';
 import 'package:rsapp/Pages/Registration/registration_header.dart';
+import 'package:image_picker/image_picker.dart';
 
-import '../Login/header_design.dart';
+import '../../Common/image_picker.dart';
+
+
 
 
 class RegistrationPage extends  StatefulWidget{
@@ -21,8 +25,6 @@ class RegistrationPage extends  StatefulWidget{
 
 class _RegistrationPageState extends State<RegistrationPage>{
   final _formKey = GlobalKey<FormState>();
-
-  bool isLoading =false;
   bool checkboxValue = false;
   late String username,email,password;
   GlobalKey<ScaffoldState>_scaffoldKey=GlobalKey();
@@ -31,7 +33,76 @@ class _RegistrationPageState extends State<RegistrationPage>{
   TextEditingController _usernameController=new TextEditingController();
   TextEditingController _emailController=new TextEditingController();
   TextEditingController _passwordController=new TextEditingController();
+  final ImagePicker _picker = ImagePicker();
 
+  bool uploadStatus = false;
+
+ File? _image;
+
+  _imageFromCamera() async {
+    final PickedFile? pickedImage =
+    await _picker.getImage(source: ImageSource.camera, imageQuality: 50);
+    if (pickedImage == null) {
+      showAlertDialog(
+          context: context,
+          title: "Error Uploading!",
+          content: "No Image was selected.");
+      return;
+    }
+    final File fileImage = File(pickedImage.path);
+    if (imageConstraint(fileImage)) {
+      setState(() {
+        _image = fileImage;
+      });
+    }
+  }
+
+  _imageFromGallery() async {
+    final PickedFile? pickedImage =
+    await _picker.getImage(source: ImageSource.gallery, imageQuality: 50);
+    if (pickedImage == null) {
+      showAlertDialog(
+          context: context,
+          title: "Error Uploading!",
+          content: "No Image was selected.");
+      return;
+    }
+    final File fileImage = File(pickedImage.path);
+    if (imageConstraint(fileImage)) {
+      setState(() {
+        _image = fileImage;
+      });
+    }
+  }
+
+  bool imageConstraint(File image) {
+    if (!['bmp', 'jpg', 'jpeg']
+        .contains(image.path.split('.').last.toString())) {
+      showAlertDialog(
+          context: context,
+          title: "Error Uploading!",
+          content: "Image format should be jpg/jpeg/bmp.");
+      return false;
+    }
+    if (image.lengthSync() > 10000000000000) {
+      showAlertDialog(
+          context: context,
+          title: "Error Uploading!",
+          content: "Image Size should be less than expected.");
+      return false;
+    }
+    return true;
+  }
+
+
+
+@override
+void dispose(){
+  _usernameController.dispose();
+  _emailController.dispose();
+  _passwordController.dispose();
+  super.dispose();
+}
   @override
   Widget build(BuildContext context) {
     scaffoldMessenger = ScaffoldMessenger.of(context);
@@ -63,34 +134,43 @@ class _RegistrationPageState extends State<RegistrationPage>{
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(100),
                                   border: Border.all(
-                                      width: 5, color: Colors.white),
+                                      width: 1, color: Colors.white),
                                   color: Colors.white,
-                                  boxShadow: [
+                                  boxShadow: const [
                                     BoxShadow(
                                       color: Colors.black12,
                                       blurRadius: 20,
-                                      offset: const Offset(5, 5),
+                                      offset: Offset(5, 5),
                                     ),
                                   ],
                                 ),
-                                child: Icon(
-                                  Icons.person,
-                                  color: Colors.grey.shade300,
-                                  size: 80.0,
+                                child:CircleAvatar(
+                                  radius: MediaQuery.of(context).size.width / 6,
+                                  backgroundColor: Colors.grey,
+                                  backgroundImage: _image != null
+                                       ? FileImage(_image!)
+                                       : AssetImage('images/splash_image.jpeg') as ImageProvider
+                                 // Icon(Icons.person, color: Colors.grey.shade300, size: 80.0,),
                                 ),
                               ),
-                              Container(
-                                padding: EdgeInsets.fromLTRB(80, 80, 0, 0),
+                              InkWell(
+                                onTap: () {
+                                  bottomPickerSheet(
+                                      context, _imageFromCamera, _imageFromGallery);
+                                },
+                                child:Container(
+                                padding: EdgeInsets.fromLTRB(110, 110, 0, 0),
                                 child: Icon(
                                   Icons.add_circle,
                                   color: Colors.grey.shade700,
                                   size: 25.0,
                                 ),
                               ),
+            ),
                             ],
                           ),
                         ),
-                        SizedBox(height: 30,),
+                        const SizedBox(height: 30,),
                         Container(
                           child: TextFormField(
                             decoration: ThemeHelper().textInputDecoration('User Name', 'Enter your User name'),
@@ -194,12 +274,9 @@ class _RegistrationPageState extends State<RegistrationPage>{
                               ),
                             ),
                             onPressed: () {
-                              if(isLoading){
-                                return;
-                              }
                                 if(_formKey.currentState!.validate()){
                                   Future<Map<String, dynamic>> response =
-                                  ApiManager().postRegister(_usernameController.text,_emailController.text,_passwordController.text,"null");
+                                  ApiManager().postRegister(_usernameController.text,_emailController.text,_passwordController.text,_image!.path.toString());
                                   response.then((value) =>
                                   {
                                     value.forEach((key, value) {
@@ -264,6 +341,27 @@ class _RegistrationPageState extends State<RegistrationPage>{
         ),
       ),
     );
+  }
+  showAlertDialog({required BuildContext context, String? title, String? content}) {
+    return showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text(title ?? ""),
+            content: Text(content ?? ""),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text('Continue'),
+                ),
+              ),
+            ],
+          );
+        });
   }
 
 }

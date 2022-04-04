@@ -1,11 +1,16 @@
 
 import 'package:flutter/material.dart';
 import 'package:hexcolor/hexcolor.dart';
+import 'package:intl/intl.dart';
 import 'package:rsapp/Api/api_list.dart';
 import 'package:rsapp/Common/theme_helper.dart';
 import 'package:drawer_swipe/drawer_swipe.dart';
 import 'package:rsapp/Model/usermodel.dart';
+import 'package:rsapp/Pages/Login/login_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import '../Create_new/create_new.dart';
+import '../History/history_page.dart';
 import 'navigationbar.dart';
 
 class HomePage extends StatefulWidget {
@@ -14,16 +19,24 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  late Future<User?> userdetails;
+  DateTime _todayDate = DateTime.now();
+  late Future<double> monthlyBudget;
+  String owner ="Ramprasath";
+  String owners ="Sudha";
   Color _primaryColor = HexColor('#DC54FE');
   Color _accentColor = HexColor('#8A02AE');
   int currentIndex = 1;
   var drawerKey = GlobalKey<SwipeDrawerState>();
+  String username="null";
+
   @override
-  void initState() {
+  void initState()  {
       super.initState();
-      userdetails = ApiList().getUserDetails();
+      String month = DateFormat.MMMM().format(_todayDate);
+      String year =DateFormat.y().format(_todayDate);
+      monthlyBudget = ApiList().monthlyTotal(month, year);
   }
+
   @override
   setBottomBarIndex(index) {
     setState(() {
@@ -65,7 +78,11 @@ backgroundColor: Colors.transparent,
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-          Column(
+    FutureBuilder<SharedPreferences?>(
+    future: SharedPreferences.getInstance(),
+    builder:(context,snapshot) {
+    if (snapshot.hasData) {
+    return Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -78,21 +95,28 @@ backgroundColor: Colors.transparent,
                     shape: BoxShape.circle,
                     image: DecorationImage(
                         image: NetworkImage(
-                            "https://images.unsplash.com/photo-1531256456869-ce942a665e80?ixid=MXwxMjA3fDB8MHxzZWFyY2h8MTI4fHxwcm9maWxlfGVufDB8fDB8&ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60"),
+                          snapshot.data?.getString("profilePic")??"null",),
                         fit: BoxFit.cover)),
               ),
             ),
             SizedBox(
               height: 5,
             ),
-            Text("Mr.Ramprasath",style: TextStyle(
+            Text(snapshot.data?.getString("name")??"null",style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w500,
                 color: Colors.white54
             ),
             ),
             ]
-          ),
+          );
+      }
+      else if (snapshot.hasError) {
+      return Text('${snapshot.error}');
+      }
+      return const CircularProgressIndicator();
+    }
+    ),
 
             ListTile(
               title: Text("History",style: TextStyle(
@@ -100,7 +124,10 @@ backgroundColor: Colors.transparent,
                   fontWeight: FontWeight.w500,
                   color: Colors.white54
               ),),
-              onTap: (){},
+              onTap: (){
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) =>HistoryPage()));
+              },
             ),
             ListTile(
               title: Text('Home',style: TextStyle(
@@ -108,14 +135,27 @@ backgroundColor: Colors.transparent,
                   fontWeight: FontWeight.w500,
                   color: Colors.white54
               ),),
-              onTap: (){},),
+              onTap: (){
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) =>HomePage()));
+              },),
 
             ListTile(
+
               title: Text('Logout', style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w500,
                   color: Colors.deepOrangeAccent
-              ),),),
+              ),),
+            onTap: ()async {
+              SharedPreferences prefs = await SharedPreferences.getInstance();
+              prefs.remove("value");
+              prefs.remove("name");
+              prefs.remove("email");
+              prefs.remove("profilePic");
+              Navigator.pushReplacement(context,
+                  MaterialPageRoute(builder: (BuildContext ctx) => LoginPage()));
+            },),
           ],
         ),
       ),
@@ -178,8 +218,8 @@ backgroundColor: Colors.transparent,
                     child: Column(
 
                       children: [
-                        FutureBuilder<User?>(
-                          future:userdetails,
+                        FutureBuilder<SharedPreferences?>(
+                          future: SharedPreferences.getInstance(),
                         builder:(context,snapshot) {
                           if (snapshot.hasData) {
                             return Row(
@@ -193,8 +233,7 @@ backgroundColor: Colors.transparent,
                                     decoration: BoxDecoration(
                                         shape: BoxShape.circle,
                                         image: DecorationImage(
-                                            image: NetworkImage(
-                                                snapshot.data!.profilePic.toString()),
+                                            image: NetworkImage(snapshot.data?.getString("profilePic")??"null",),
                                             fit: BoxFit.cover)),
                                   ),
                                 ),
@@ -216,7 +255,7 @@ backgroundColor: Colors.transparent,
                                         height: 5,
                                       ),
                                       Text(
-                                        snapshot.data!.username,
+                                        snapshot.data?.getString("name")??"null",
                                         style: TextStyle(
                                             fontSize: 20,
                                             fontWeight: FontWeight.w500,
@@ -246,7 +285,11 @@ backgroundColor: Colors.transparent,
                             child: Padding(
                             padding: const EdgeInsets.only(
                                 left: 20, right: 20, top: 25, bottom: 25),
-                            child: Row(
+                            child: FutureBuilder<double>(
+    future: monthlyBudget,
+    builder:(context,snapshot) {
+    if (snapshot.hasData) {
+    return Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
@@ -254,7 +297,7 @@ backgroundColor: Colors.transparent,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
                                     Text(
-                                      "24 Feb 2022",
+        DateFormat("dd-MM-yyyy").format((_todayDate)),
                                       style: TextStyle(
                                           fontWeight: FontWeight.w500,
                                           fontSize: 12,
@@ -281,7 +324,7 @@ backgroundColor: Colors.transparent,
                                       child: Padding(
                                         padding: const EdgeInsets.all(13.0),
                                         child: Text(
-                                          "£2446.90",
+                                          "£"+snapshot.data.toString(),
                                           style: TextStyle(
                                               fontWeight: FontWeight.bold,
                                               fontSize: 20,
@@ -289,11 +332,16 @@ backgroundColor: Colors.transparent,
                                         ),
                                       ),
                                     )
-
                                   ],
                                 ),
-
                               ],
+                            );
+      }
+      else if (snapshot.hasError) {
+      return Text('${snapshot.error}');
+      }
+      return const CircularProgressIndicator();
+    }
                             ),
                             ),
                           ),
@@ -309,7 +357,11 @@ backgroundColor: Colors.transparent,
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Container(
+    FutureBuilder<double>(
+    future: ApiList().ownermonthlyTotal(owner,DateFormat.MMMM().format(_todayDate)),
+    builder:(context,snapshot) {
+    if (snapshot.hasData) {
+    return Container(
                       width: (size.width - 60) / 2,
                       height: 170,
                       decoration: BoxDecoration(
@@ -364,7 +416,7 @@ backgroundColor: Colors.transparent,
                                   height: 8,
                                 ),
                                 Text(
-                                  "£240.0",
+                                  "£"+snapshot.data.toString(),
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 20,
@@ -375,77 +427,97 @@ backgroundColor: Colors.transparent,
                           ],
                         ),
                       ),
-                    ),
+                    );
+      }
+      else if (snapshot.hasError) {
+      return Text('${snapshot.error}');
+      }
+      return const CircularProgressIndicator();
+    }
+    ),
                     SizedBox(
                       width: 20,
                     ),
-                    Container(
-                      width: (size.width - 60) / 2,
-                      height: 170,
-                      decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.withOpacity(0.01),
-                              spreadRadius: 10,
-                              blurRadius: 3,
-                              // changes position of shadow
-                            ),
-                          ]),
-                      child: Padding(
-                        padding: const EdgeInsets.only(
-                            left: 25, right: 25, top: 20, bottom: 20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Container(
-                              decoration: ThemeHelper().buttonBoxDecoration(context),
-                              child: ElevatedButton(
-                                style: ThemeHelper().buttonStyle(),
-                                child: Padding(
-                                  padding: const EdgeInsets.fromLTRB(15, 15, 15, 15),
-                                  child: Text(
-                                    "Go".toUpperCase(),
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                                onPressed: () {
-
-                                },
-                              ),
-                            ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Text(
-                                  "Sudha",
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.w500,
-                                      fontSize: 16,
-                                      color: Color(0xff67727d)),
-                                ),
-                                SizedBox(
-                                  height: 8,
-                                ),
-                                Text(
-                                  "£480.0",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 20,
-                                  ),
-                                )
-                              ],
-                            )
-                          ],
-                        ),
+    FutureBuilder<double>(
+    future: ApiList().ownermonthlyTotal(owners, DateFormat.MMMM().format(_todayDate)),
+    builder:(context,snapshot) {
+    if (snapshot.hasData) {
+      return Container(
+        width: (size.width - 60) / 2,
+        height: 170,
+        decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.01),
+                spreadRadius: 10,
+                blurRadius: 3,
+                // changes position of shadow
+              ),
+            ]),
+        child: Padding(
+          padding: const EdgeInsets.only(
+              left: 25, right: 25, top: 20, bottom: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                decoration: ThemeHelper().buttonBoxDecoration(context),
+                child: ElevatedButton(
+                  style: ThemeHelper().buttonStyle(),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(15, 15, 15, 15),
+                    child: Text(
+                      "Go".toUpperCase(),
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
                     ),
+                  ),
+                  onPressed: () {
+
+                  },
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    "Sudha",
+                    style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 16,
+                        color: Color(0xff67727d)),
+                  ),
+                  SizedBox(
+                    height: 8,
+                  ),
+                  Text(
+                    "£"+snapshot.data.toString(),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),
+                  )
+                ],
+              )
+            ],
+          ),
+        ),
+      );
+
+                     }
+                          else if (snapshot.hasError) {
+    return Text('${snapshot.error}');
+    }
+    return const CircularProgressIndicator();
+    }
+    ),
+
                   ],
                 ),
               ],

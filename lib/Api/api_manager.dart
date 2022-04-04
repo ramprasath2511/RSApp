@@ -1,7 +1,5 @@
 import 'dart:async';
-import 'dart:collection';
 import 'dart:convert';
-import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:rsapp/Model/usermodel.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -45,10 +43,10 @@ class ApiManager {
     if (response.statusCode == 200) {
       String streamedResponse = await response.stream.bytesToString();
        // print(jsonDecode(stremedResponse));
-      _savePref(1,email);
+      _savePref(1,"email");
         return jsonDecode(streamedResponse);
     } else {
-      return headers;
+      throw Exception('Failed to load Budgetdetails');
     }
   }
 
@@ -75,18 +73,18 @@ class ApiManager {
 
   }
   savePref(int value, String username, String email, String? profilePic) async {
-    SharedPreferences preferences = await SharedPreferences.getInstance();
-    preferences.setInt("value", value);
-    preferences.setString("name", username);
-    preferences.setString("email", email);
-    preferences.setString("profilePic",profilePic!);
-    preferences.commit();
-
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setInt("value", value);
+    prefs.setString("name", username);
+    prefs.setString("email", email);
+    prefs.setString("profilePic",profilePic!);
+    prefs.commit();
   }
+
   _savePref(int value, String email) async {
     SharedPreferences preferences = await SharedPreferences.getInstance();
     preferences.setInt("value", value);
-    preferences.setString("email", email);
+    preferences.getString("email");
     preferences.commit();
 
   }

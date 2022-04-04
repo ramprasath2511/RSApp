@@ -11,12 +11,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:rsapp/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+  testWidgets('Budjetapp', (WidgetTester tester) async {
     // Build our app and trigger a frame.
     await tester.pumpWidget(RsApp());
 
     // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
+    expect(find.text('username'), findsOneWidget);
     expect(find.text('1'), findsNothing);
 
     // Tap the '+' icon and trigger a frame.
